@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<script language="JavaScript">
+<!--
+	var skills = [	"Atakk", "Mynd", "Difens", "Reziss", "Spirri",
+			  	"Rangus","Roon", "Blokk", "Wresst", "Gillium", 
+				"Blude", "Plezur", "Primor", "Gaine", "Releeph", 
+				"Fantum", "Chein", "Mirag", "Gaizer", "Justiss", 
+				"Tempescht", "Wundor", "Farrest", "Fethur", "Tenshun",
+				"Shokk", "Flaym", "Sloe", "Poizon", "Fatty G",
+				"Animili", "Schel", "Blarb", "Leglis", "Pinyon",
+				"Anther", "Plaite", "Litsch", "Deemun", "Lindwer",
+				"Voyd", "Faira", "Urth", "Acqua", "Windur",
+				"Pennetrayt", "Sheeld", "Priventi", "Invalada","Phoenix" ]
+
+	function Init() {
+		PopulateSelects();
+		ClearPage();
+        browserCheck();
+	}
+    
+    function browserCheck()
+    {
+        var browser = get_browser_info();
+        var name = browser.name;
+        var ver = browser.version;
+        
+        if ( (name == "Firefox" && ver >= 41) || (name == "Chrome" && ver >= 43) || (name == "Opera" && ver >= 29) || ((name == "IE" || name == "IE ") && ver >= 10) )
+        {
+            form2.copyButton.style.visibility = "visible";
+        }
+        else
+            form2.copyButton.style.visibility = "hidden";
+    }
+	
+	function PopulateSelects() 
+	{
+		for(var i = 0; i < 50; i++) {
+			form1.skill1.options[i] = new Option(skills[i], i);
+			form1.skill2.options[i] = new Option(skills[i], i);
+			form2.desiredSkill.options[i] = new Option(skills[i], i);
+		}
+		
+		form1.skill1.selectedIndex = -1;
+		form1.skill2.selectedIndex = -1;
+		form2.desiredSkill.selectedIndex = -1;
+	}
+	
+	function ClearPage()
+	{
+		form1.skill_output.value = "";
+		clear_reverse_boxes();
+	}
+	
+	function skill1Changed() {
+		if(form1.skill2.selectedIndex >= 0) {
+			var skill_num = calculate_skill_outcome(form1.skill1.selectedIndex+1, form1.skill2.selectedIndex+1);
+			form1.skill_output.value = skills[skill_num-1];
+		}
+	}
+	
+	function skill2Changed() {
+		if(form1.skill1.selectedIndex >= 0) {
+			var skill_num = calculate_skill_outcome(form1.skill1.selectedIndex+1, form1.skill2.selectedIndex+1);
+			form1.skill_output.value = skills[skill_num-1];
+		}
+	}
+	
+	function desiredSkillChanged() {
+		reverse_calculate();
+        form2.copyButton.disabled = false;
+	}
+	
+	function is_same_element(skill1, skill2) 
+	{
+		var same = false;
+		
+		if(skill1 > skill2) {
+			while(skill1 > skill2) {
+				skill1 -= 5;
+				if(skill1 == skill2) {
+					same = true;
+					break
+				}
+			}
+		}
+		
+		else {
+			while(skill2 > skill1) {
+				skill2 -= 5;
+				if(skill1 == skill2) {
+					same = true;
+					break;
+				}
+			}
+		}
+		
+		return same;
+	}
+	
+	function is_same_group(skill1, skill2)
+	{
+		skill1 = parseInt((skill1-1) / 5) * 5;
+		skill2 = parseInt((skill2-1) / 5) * 5;
+		if(skill1 == skill2)
+			return true;
+		return false;
+	}
+	
+	function closest(array, num)
+	{
+		var i=0;
+		    var minDiff=1000;
+		    var ans;
+		    for(i in array){
+		         var m=Math.abs(num-array[i]);
+		         if(m<minDiff){ 
+		                minDiff=m; 
+		                ans=array[i]; 
+		            }
+		      }
+		return ans;
+	}
+	
+	function calculate_skill_outcome(skill1, skill2)
+	{
+		if(skill1 == skill2)
+			return skill1;
+			
+		var skill_number = 0;
+		
+		// If the two skills are in the same group
+		if(is_same_group(skill1,skill2))
+		{
+			var skill1_ele = skill1 % 5;
+			var skill2_ele = skill2 % 5;
+			var skill_mod = 0;	
+			
+			// If either skill is earth element
+			if(skill1_ele == 0 || skill2_ele == 0) {
+				// Special case, 1 & 5 -> 2
+				if (skill1_ele == 1 || skill2_ele == 1)
+					skill_mod = 2;
+				else
+					skill_mod = skill1_ele + skill2_ele -1;
+			}
+			
+			// If either skill is null element
+			else if(skill1_ele == 1 || skill2_ele == 1)
+				skill_mod = skill1_ele + skill2_ele;
+			// If both skills are neither earth nor null
+			else {
+				skill_mod = skill1_ele + skill2_ele - 1;
+				if (skill_mod > 5)
+					skill_mod -= 5;
+			}			
+			skill_number = (parseInt((skill1-1) / 5) * 5) + skill_mod;
+		}
+		
+		// Else if the two skills are of the same element
+		else if (is_same_element(skill1, skill2))
+		{
+			// Generate a list of the skill numbers within this element
+			var element = skill1 % 5;
+			if (element == 0)
+				element = 5;
+
+			var ele_list = [];
+			for(var i = 0; i < 10; i++)
+				ele_list.push(element + (i*5));
+
+			// Get the would-be index of the outcome skill
+			var false_index = parseInt((skill1 + skill2) / 2);
+			
+			// Find which skill index it's closest to within the element
+			var true_index = closest(ele_list, false_index);
+			
+			// Make sure that it didn't pick one of the input skills as an output
+			while (true_index == skill1 || true_index == skill2)
+				true_index += 5;
+			
+			if(true_index == 50)
+				skill_number = 50;
+			else
+				skill_number = true_index % 50;
+		}
+		
+		// Finally, if the two skills aren't related by group OR element
+		else
+			skill_number = parseInt((skill1 + skill2) / 2);
+		
+		return skill_number;
+	}
+	
+	function reverse_calculate()
+	{
+		clear_reverse_boxes();
+		
+		var skill1 = [];
+		var skill2 = [];
+		
+		for (var x = 1; x < 51; x++) {
+			for(var y = 50; y > x; y--) {
+				if(calculate_skill_outcome(x,y) == form2.desiredSkill.selectedIndex+1) {
+					skill1.push(x);
+					skill2.push(y);
+				}
+			}
+		}
+		
+		if(skill1.length > 0) form2.box1.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box2.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box3.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box4.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box5.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box6.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box7.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box8.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box9.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box10.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box11.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box12.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box13.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box14.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box15.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box16.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box17.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box18.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box19.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box20.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box21.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box22.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box23.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box24.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box25.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box26.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box27.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box28.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box29.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box30.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box31.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box32.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box33.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box34.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box35.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box36.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box37.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box38.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box39.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box40.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box41.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box42.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box43.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box44.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box45.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box46.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box47.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box48.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box49.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box50.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+		if(skill1.length > 0) form2.box51.value = skills[skill1.shift()-1] + " + " + skills[skill2.shift()-1];
+	}
+	
+	function clear_reverse_boxes()
+	{
+		form2.box1.value = "";
+		form2.box2.value = "";
+		form2.box3.value = "";
+		form2.box4.value = "";
+		form2.box5.value = "";
+		form2.box6.value = "";
+		form2.box7.value = "";
+		form2.box8.value = "";
+		form2.box9.value = "";
+		form2.box10.value = "";
+		form2.box11.value = "";
+		form2.box12.value = "";
+		form2.box13.value = "";
+		form2.box14.value = "";
+		form2.box15.value = "";
+		form2.box16.value = "";
+		form2.box17.value = "";
+		form2.box18.value = "";
+		form2.box19.value = "";
+		form2.box20.value = "";
+		form2.box21.value = "";
+		form2.box22.value = "";
+		form2.box23.value = "";
+		form2.box24.value = "";
+		form2.box25.value = "";
+		form2.box26.value = "";
+		form2.box27.value = "";
+		form2.box28.value = "";
+		form2.box29.value = "";
+		form2.box30.value = "";
+		form2.box31.value = "";
+		form2.box32.value = "";
+		form2.box33.value = "";
+		form2.box34.value = "";
+		form2.box35.value = "";
+		form2.box36.value = "";
+		form2.box37.value = "";
+		form2.box38.value = "";
+		form2.box39.value = "";
+		form2.box40.value = "";
+		form2.box41.value = "";
+		form2.box42.value = "";
+		form2.box43.value = "";
+		form2.box44.value = "";
+		form2.box45.value = "";
+		form2.box46.value = "";
+		form2.box47.value = "";
+		form2.box48.value = "";
+		form2.box49.value = "";
+		form2.box50.value = "";
+		form2.box51.value = "";
+	}
+    
+    function copyAllCombinations()
+    {
+        var buffer = "------------------------------\nDesired skill: " + skills[form2.desiredSkill.selectedIndex] + "\n";
+        
+        if(form2.box1.value != "") buffer += "\n" + form2.box1.value;
+        if(form2.box2.value != "") buffer += "\n" + form2.box2.value;
+        if(form2.box3.value != "") buffer += "\n" + form2.box3.value;
+        if(form2.box4.value != "") buffer += "\n" + form2.box4.value;
+        if(form2.box5.value != "") buffer += "\n" + form2.box5.value;
+        if(form2.box6.value != "") buffer += "\n" + form2.box6.value;
+        if(form2.box7.value != "") buffer += "\n" + form2.box7.value;
+        if(form2.box8.value != "") buffer += "\n" + form2.box8.value;
+        if(form2.box9.value != "") buffer += "\n" + form2.box9.value;
+        if(form2.box10.value != "") buffer += "\n" + form2.box10.value;
+        if(form2.box11.value != "") buffer += "\n" + form2.box11.value;
+        if(form2.box12.value != "") buffer += "\n" + form2.box12.value;
+        if(form2.box13.value != "") buffer += "\n" + form2.box13.value;
+        if(form2.box14.value != "") buffer += "\n" + form2.box14.value;
+        if(form2.box15.value != "") buffer += "\n" + form2.box15.value;
+        if(form2.box16.value != "") buffer += "\n" + form2.box16.value;
+        if(form2.box17.value != "") buffer += "\n" + form2.box17.value;
+        if(form2.box18.value != "") buffer += "\n" + form2.box18.value;
+        if(form2.box19.value != "") buffer += "\n" + form2.box19.value;
+        if(form2.box20.value != "") buffer += "\n" + form2.box20.value;
+        if(form2.box21.value != "") buffer += "\n" + form2.box21.value;
+        if(form2.box22.value != "") buffer += "\n" + form2.box22.value;
+        if(form2.box23.value != "") buffer += "\n" + form2.box23.value;
+        if(form2.box24.value != "") buffer += "\n" + form2.box24.value;
+        if(form2.box25.value != "") buffer += "\n" + form2.box25.value;
+        if(form2.box26.value != "") buffer += "\n" + form2.box26.value;
+        if(form2.box27.value != "") buffer += "\n" + form2.box27.value;
+        if(form2.box28.value != "") buffer += "\n" + form2.box28.value;
+        if(form2.box29.value != "") buffer += "\n" + form2.box29.value;
+        if(form2.box30.value != "") buffer += "\n" + form2.box30.value;
+        if(form2.box31.value != "") buffer += "\n" + form2.box31.value;
+        if(form2.box32.value != "") buffer += "\n" + form2.box32.value;
+        if(form2.box33.value != "") buffer += "\n" + form2.box33.value;
+        if(form2.box34.value != "") buffer += "\n" + form2.box34.value;
+        if(form2.box35.value != "") buffer += "\n" + form2.box35.value;
+        if(form2.box36.value != "") buffer += "\n" + form2.box36.value;
+        if(form2.box37.value != "") buffer += "\n" + form2.box37.value;
+        if(form2.box38.value != "") buffer += "\n" + form2.box38.value;
+        if(form2.box39.value != "") buffer += "\n" + form2.box39.value;
+        if(form2.box40.value != "") buffer += "\n" + form2.box40.value;
+        if(form2.box41.value != "") buffer += "\n" + form2.box41.value;
+        if(form2.box42.value != "") buffer += "\n" + form2.box42.value;
+        if(form2.box43.value != "") buffer += "\n" + form2.box43.value;
+        if(form2.box44.value != "") buffer += "\n" + form2.box44.value;
+        if(form2.box45.value != "") buffer += "\n" + form2.box45.value;
+        if(form2.box46.value != "") buffer += "\n" + form2.box46.value;
+        if(form2.box47.value != "") buffer += "\n" + form2.box47.value;
+        if(form2.box48.value != "") buffer += "\n" + form2.box48.value;
+        if(form2.box49.value != "") buffer += "\n" + form2.box49.value;
+        if(form2.box50.value != "") buffer += "\n" + form2.box50.value;
+        if(form2.box51.value != "") buffer += "\n" + form2.box51.value;
+        buffer += "\n------------------------------\n";
+        
+        copyTextToClipboard(buffer);
+    }
+
+    
+    function copyTextToClipboard(text) {
+  var textArea = document.createElement("textarea");
+
+  //
+  // *** This styling is an extra step which is likely not required. ***
+  //
+  // Why is it here? To ensure:
+  // 1. the element is able to have focus and selection.
+  // 2. if element was to flash render it has minimal visual impact.
+  // 3. less flakyness with selection and copying which **might** occur if
+  //    the textarea element is not visible.
+  //
+  // The likelihood is the element won't even render, not even a flash,
+  // so some of these are just precautions. However in IE the element
+  // is visible whilst the popup box asking the user for permission for
+  // the web page to copy to the clipboard.
+  //
+
+  // Place in top-left corner of screen regardless of scroll position.
+  textArea.style.position = 'fixed';
+  textArea.style.top = 0;
+  textArea.style.left = 0;
+
+  // Ensure it has a small width and height. Setting to 1px / 1em
+  // doesn't work as this gives a negative w/h on some browsers.
+  textArea.style.width = '2em';
+  textArea.style.height = '2em';
+
+  // We don't need padding, reducing the size if it does flash render.
+  textArea.style.padding = 0;
+
+  // Clean up any borders.
+  textArea.style.border = 'none';
+  textArea.style.outline = 'none';
+  textArea.style.boxShadow = 'none';
+
+  // Avoid flash of white box if rendered for any reason.
+  textArea.style.background = 'transparent';
+
+
+  textArea.value = text;
+
+  document.body.appendChild(textArea);
+
+  textArea.select();
+
+  try {
+    var successful = document.execCommand('copy');
+    var msg = successful ? 'successful' : 'unsuccessful';
+    console.log('Copying text command was ' + msg);
+  } catch (err) {
+    console.log('Oops, unable to copy');
+  }
+
+  document.body.removeChild(textArea);
+}
+
+
+ function get_browser_info(){
+    var ua=navigator.userAgent,tem,M=ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || []; 
+    if(/trident/i.test(M[1])){
+        tem=/\brv[ :]+(\d+)/g.exec(ua) || []; 
+        return {name:'IE',version:(tem[1]||'')};
+        }   
+    if(M[1]==='Chrome'){
+        tem=ua.match(/\bOPR\/(\d+)/)
+        if(tem!=null)   {return {name:'Opera', version:tem[1]};}
+        }   
+    M=M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+    if((tem=ua.match(/version\/(\d+)/i))!=null) {M.splice(1,1,tem[1]);}
+    return {
+      name: M[0],
+      version: M[1]
+    };
+ }
+
+//-->
+</script>
+
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body style="background-color: darkgray;" id="home" onload="Init();">
+        <h1>Skill calculator</h1>
+
+        <h3>Forward calculation</h3>
+
+        <form name="form1">
+            <p>Skill #1
+                <select style="width:140px" name="skill1" onchange="skill1Changed();"></select>
+            </p>
+
+            <p>Skill #2
+                <select style="width:140px" name="skill2" onchange="skill2Changed();"></select>
+            </p>
+            <br>
+            <input type="text" name="skill_output" readonly>
+        </form>
+
+        <br>
+        <br>
+
+        <h3>Reverse calculation</h3>
+
+        <form name="form2">
+            <p>Desired skill:
+                <select style="width:140px" name="desiredSkill" onchange="desiredSkillChanged();"></select>
+                <button name="copyButton" style="margin-left: 90px;" id="mar" type="button" onclick="copyAllCombinations();" disabled>Copy to clipboard</button>
+            </p>
+
+            <table>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box1" readonly></td>
+                    <td><input style="width:140px" type="text" name="box2" readonly></td>
+                    <td><input style="width:140px" type="text" name="box3" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box4" readonly></td>
+                    <td><input style="width:140px" type="text" name="box5" readonly></td>
+                    <td><input style="width:140px" type="text" name="box6" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box7" readonly></td>
+                    <td><input style="width:140px" type="text" name="box8" readonly></td>
+                    <td><input style="width:140px" type="text" name="box9" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box10" readonly></td>
+                    <td><input style="width:140px" type="text" name="box11" readonly></td>
+                    <td><input style="width:140px" type="text" name="box12" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box13" readonly></td>
+                    <td><input style="width:140px" type="text" name="box14" readonly></td>
+                    <td><input style="width:140px" type="text" name="box15" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box16" readonly></td>
+                    <td><input style="width:140px" type="text" name="box17" readonly></td>
+                    <td><input style="width:140px" type="text" name="box18" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box19" readonly></td>
+                    <td><input style="width:140px" type="text" name="box20" readonly></td>
+                    <td><input style="width:140px" type="text" name="box21" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box22" readonly></td>
+                    <td><input style="width:140px" type="text" name="box23" readonly></td>
+                    <td><input style="width:140px" type="text" name="box24" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box25" readonly></td>
+                    <td><input style="width:140px" type="text" name="box26" readonly></td>
+                    <td><input style="width:140px" type="text" name="box27" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box28" readonly></td>
+                    <td><input style="width:140px" type="text" name="box29" readonly></td>
+                    <td><input style="width:140px" type="text" name="box30" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box31" readonly></td>
+                    <td><input style="width:140px" type="text" name="box32" readonly></td>
+                    <td><input style="width:140px" type="text" name="box33" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box34" readonly></td>
+                    <td><input style="width:140px" type="text" name="box35" readonly></td>
+                    <td><input style="width:140px" type="text" name="box36" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box37" readonly></td>
+                    <td><input style="width:140px" type="text" name="box38" readonly></td>
+                    <td><input style="width:140px" type="text" name="box39" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box40" readonly></td>
+                    <td><input style="width:140px" type="text" name="box41" readonly></td>
+                    <td><input style="width:140px" type="text" name="box42" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box43" readonly></td>
+                    <td><input style="width:140px" type="text" name="box44" readonly></td>
+                    <td><input style="width:140px" type="text" name="box45" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box46" readonly></td>
+                    <td><input style="width:140px" type="text" name="box47" readonly></td>
+                    <td><input style="width:140px" type="text" name="box48" readonly></td>
+                </tr>
+                <tr>
+                    <td><input style="width:140px" type="text" name="box49" readonly></td>
+                    <td><input style="width:140px" type="text" name="box50" readonly></td>
+                    <td><input style="width:140px" type="text" name="box51" readonly></td>
+                </tr>
+        </form>
+    </body>
+</html>
